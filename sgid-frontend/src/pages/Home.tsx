@@ -28,7 +28,6 @@ export const HomePage = (): JSX.Element => {
   // Radio button state
   const [idp, setIDP] = useState(IDPOptions.SGID)
   const idpFieldId = useMemo(() => 'idp', [])
-  const backendURL= import.meta.env.VITE_BACKEND_URL
   // Button loading state
   const [isLoading, setIsLoading] = useState(false)
 
@@ -38,7 +37,7 @@ export const HomePage = (): JSX.Element => {
   const handleLoginBtnClick = useCallback((value: IDPOptions) => {
     setIDP(value)
     setIsLoading(true)
-    fetch(backendURL+`/api/auth-url?idp=${idp}`, {
+    fetch(process.env.VITE_BACKEND_URL+`/api/auth-url?idp=${idp}`, {
       credentials: 'include',
     })
       .then(async (r) => await r.json())

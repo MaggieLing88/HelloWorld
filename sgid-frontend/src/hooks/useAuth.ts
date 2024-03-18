@@ -10,9 +10,8 @@ interface UseAuth {
 export const useAuth = (): UseAuth => {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const backendURL= import.meta.env.VITE_BACKEND_URL
   useEffect(() => {
-    fetch(backendURL+'/api/userinfo', {
+    fetch(process.env.VITE_BACKEND_URL+'/api/userinfo', {
       credentials: 'include',
     })
       .then(async (r) => await r.json())

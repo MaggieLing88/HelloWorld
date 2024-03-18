@@ -13,10 +13,9 @@ export const LogOutButton = ({
   const [isLoading, setIsLoading] = useState(false)
   const { showBoundary } = useErrorBoundary()
   const navigate = useNavigate()
-  const backendURL= import.meta.env.VITE_BACKEND_URL
   const handleLogout = useCallback(() => {
     setIsLoading(true)
-    fetch(backendURL+'/api/logout', {
+    fetch(process.env.VITE_BACKEND_URL+'/api/logout', {
       credentials: 'include',
     })
       .then(() => {
