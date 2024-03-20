@@ -7,6 +7,9 @@ import open from 'open'
 import { SgidClient } from './src/SgidClient'
 import { generatePkcePair } from './src/generators'
 import path from 'path'
+import {Logger } from './src/Logger'
+import morgan from 'morgan'
+import { Request, Response } from 'express'
 
 dotenv.config()
 
@@ -60,6 +63,33 @@ var corsOptions = {
  app.use(
    cors(corsOptions)
  )
+
+ const stream = {
+  // Use the http severity
+  write: (message: string) => Logger.getLogger().http(message)
+}
+const morganMiddleware = morgan(
+  // Define message format string
+  ":remote-addr :method :url HTTP/:http-version :status :res[content-length] - :response-time ms",
+  { stream,
+    //remove http log for health check
+    skip: (req: Request, res: Response) => {return req.originalUrl.startsWith('/api/health/check')} } 
+)
+app.use(morganMiddleware)
+
+apiRouter.get('/health/check', (req, res) => {
+  const healthcheck = {
+    uptime: process.uptime(),
+    message: 'OK',
+    timestamp: Date.now()
+  }
+  try {
+    res.status(200).send(healthcheck)
+  } catch (err: any) {
+    healthcheck.message = err
+    res.status(err.status || 503).send(`${res.statusMessage} - ${err.message}`)
+  }
+})
 
 apiRouter.get('/auth-url',(req, res) => {
   const idpSelection = String(req.query.idp)

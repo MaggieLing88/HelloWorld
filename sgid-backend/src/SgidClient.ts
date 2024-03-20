@@ -20,10 +20,11 @@ import {
   UserInfoParams,
   UserInfoReturn,
 } from './types'
+import {Logger } from './Logger'
 
 export class SgidClient {
   private sgID: Client
-
+  private log = Logger.getLogger()
   /**
    * Initialises an SgidClient instance.
    * @param params Constructor arguments
@@ -97,6 +98,7 @@ export class SgidClient {
     if (nonce) {
       result.nonce = nonce
     }
+    this.log.debug("/auth, nonce:"+nonce+", url:"+url)
     return result
   }
 
@@ -137,7 +139,7 @@ export class SgidClient {
     const { sub } = tokenSet.claims()
 
     const { access_token: accessToken, id_token: idToken} = tokenSet
-
+    this.log.debug("token return back, sub inside token:"+sub)
     // Note that this falsey check for the id token will never be run
     // because the nodejs openid-client library already does it for us
     // Doing a check here just for type safety
@@ -170,7 +172,7 @@ export class SgidClient {
        if (sub !== data['sub']) {
         throw new Error(Errors.SUB_MISMATCH_ERROR)
        }
-  
+       this.log.debug("userinfo return back, : data "+data)
     return { data}
     }
     /**
