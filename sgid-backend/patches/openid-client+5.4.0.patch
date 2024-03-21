@@ -20,7 +20,7 @@ index 7dad565..58e194b 100644
  
  const { OPError } = require('../errors');
 diff --git a/node_modules/openid-client/lib/helpers/request.js b/node_modules/openid-client/lib/helpers/request.js
-index 45e4f88..f65f610 100644
+index 45e4f88..f4d1651 100644
 --- a/node_modules/openid-client/lib/helpers/request.js
 +++ b/node_modules/openid-client/lib/helpers/request.js
 @@ -1,6 +1,6 @@
@@ -31,7 +31,7 @@ index 45e4f88..f65f610 100644
  const https = require('https');
  const { once } = require('events');
  const { URL } = require('url');
-@@ -43,17 +43,34 @@ setDefaults([], {
+@@ -43,17 +43,50 @@ setDefaults([], {
    timeout: 3500,
  });
  
@@ -52,7 +52,11 @@ index 45e4f88..f65f610 100644
 +       'content-type': contentType});
 +         stream.on("end", () => {
 +          ses.close();
-+         });     
++         });    
++         let data =''
++         stream.on("data", chunk => {
++          data += chunk;
++         }); 
 +         stream.end(body)
 +     }else{
 +        let stream = ses.request({ ":method": "POST", 
@@ -60,14 +64,26 @@ index 45e4f88..f65f610 100644
 +     stream.on("end", () => {
 +      ses.close();
 +     }); 
++     let data =''
++     stream.on("data", chunk => {
++      data += chunk;
++     }); 
 +     stream.end(body)
 +    }
 +  }else{
 +    if (contentType) {
 +      let stream = ses.request({'content-type': contentType });
++      let data =''
++      stream.on("data", chunk => {
++       data += chunk;
++      }); 
 +         stream.end();
 +    }else{
 +    let stream = ses.request();
++    let data =''
++    stream.on("data", chunk => {
++     data += chunk;
++    }); 
 +    stream.end();
 +    }
    }
@@ -75,7 +91,7 @@ index 45e4f88..f65f610 100644
  }
  
  const nonces = new LRU({ max: 100 });
-@@ -117,7 +134,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
+@@ -117,7 +150,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
    }
  
    let response;
