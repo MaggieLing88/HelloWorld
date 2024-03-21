@@ -20,7 +20,7 @@ index 7dad565..58e194b 100644
  
  const { OPError } = require('../errors');
 diff --git a/node_modules/openid-client/lib/helpers/request.js b/node_modules/openid-client/lib/helpers/request.js
-index 45e4f88..eda72c5 100644
+index 45e4f88..f86a000 100644
 --- a/node_modules/openid-client/lib/helpers/request.js
 +++ b/node_modules/openid-client/lib/helpers/request.js
 @@ -1,6 +1,6 @@
@@ -31,7 +31,7 @@ index 45e4f88..eda72c5 100644
  const https = require('https');
  const { once } = require('events');
  const { URL } = require('url');
-@@ -43,17 +43,17 @@ setDefaults([], {
+@@ -43,17 +43,18 @@ setDefaults([], {
    timeout: 3500,
  });
  
@@ -40,23 +40,24 @@ index 45e4f88..eda72c5 100644
    if (contentType) {
 -    req.removeHeader('content-type');
 -    req.setHeader('content-type', contentType);
-+    ses.request.removeHeader('content-type');
-+    ses.request.setHeader('content-type', contentType);
++    ses.request({'content-type': '' });
++    ses.request('content-type', contentType);
    }
    if (body) {
 -    req.removeHeader('content-length');
 -    req.setHeader('content-length', Buffer.byteLength(body));
 -    req.write(body);
-+    ses.request.removeHeader('content-length');
-+    ses.request.setHeader('content-length', Buffer.byteLength(body));
++    ses.request({'content-length':''});
++    ses.request('content-length', Buffer.byteLength(body));
 +    ses.request.write(body);
    }
 -  req.end();
 +  ses.request.end();
++  ses.close();
  }
  
  const nonces = new LRU({ max: 100 });
-@@ -117,7 +117,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
+@@ -117,7 +118,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
    }
  
    let response;
