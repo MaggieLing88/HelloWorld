@@ -20,7 +20,7 @@ index 7dad565..58e194b 100644
  
  const { OPError } = require('../errors');
 diff --git a/node_modules/openid-client/lib/helpers/request.js b/node_modules/openid-client/lib/helpers/request.js
-index 45e4f88..31a943a 100644
+index 45e4f88..04dcd9a 100644
 --- a/node_modules/openid-client/lib/helpers/request.js
 +++ b/node_modules/openid-client/lib/helpers/request.js
 @@ -1,6 +1,6 @@
@@ -31,35 +31,44 @@ index 45e4f88..31a943a 100644
  const https = require('https');
  const { once } = require('events');
  const { URL } = require('url');
-@@ -43,17 +43,20 @@ setDefaults([], {
+@@ -43,17 +43,25 @@ setDefaults([], {
    timeout: 3500,
  });
  
 -function send(req, body, contentType) {
-+
-+function send(ses, body, contentType) {
-+  let stream = ses.request();
-   if (contentType) {
+-  if (contentType) {
 -    req.removeHeader('content-type');
 -    req.setHeader('content-type', contentType);
-+   // stream = ses.request({'content-type': '' });
-+   // stream = ses.request({'content-type': contentType });
-   }
-   if (body) {
+-  }
+-  if (body) {
 -    req.removeHeader('content-length');
 -    req.setHeader('content-length', Buffer.byteLength(body));
 -    req.write(body);
-+    //http2 not mandated on content-length
-+    //stream = ses.request({'content-length':''});
-+    //stream = ses.request({'content-length':Buffer.byteLength(body)});
-+    stream.write(JSON.stringify(body), 'utf8');
-   }
+-  }
 -  req.end();
++
++function send(ses, body, contentType) {
++  let stream = ses.request();
++  // if (contentType) {
++  //   stream = ses.request({'content-type': '' });
++  //   stream = ses.request({'content-type': contentType });
++  // }
++  // if (body) {
++  //   http2 not mandated on content-length
++  //   stream = ses.request({'content-length':''});
++  //   stream = ses.request({'content-length':Buffer.byteLength(body)});
++  //   stream.write(JSON.stringify(body), 'utf8')
++  // }
++  writeStream(stream)
++};
++
++async function writeStream(stream) {
++  await stream.write(JSON.stringify(body), 'utf8')
 +  stream.end();
  }
  
  const nonces = new LRU({ max: 100 });
-@@ -117,7 +120,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
+@@ -117,7 +125,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
    }
  
    let response;
