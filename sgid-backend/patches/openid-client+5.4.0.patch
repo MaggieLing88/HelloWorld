@@ -20,7 +20,7 @@ index 7dad565..58e194b 100644
  
  const { OPError } = require('../errors');
 diff --git a/node_modules/openid-client/lib/helpers/request.js b/node_modules/openid-client/lib/helpers/request.js
-index 45e4f88..146139f 100644
+index 45e4f88..3837341 100644
 --- a/node_modules/openid-client/lib/helpers/request.js
 +++ b/node_modules/openid-client/lib/helpers/request.js
 @@ -1,6 +1,6 @@
@@ -31,33 +31,40 @@ index 45e4f88..146139f 100644
  const https = require('https');
  const { once } = require('events');
  const { URL } = require('url');
-@@ -43,17 +43,18 @@ setDefaults([], {
+@@ -43,17 +43,25 @@ setDefaults([], {
    timeout: 3500,
  });
  
 -function send(req, body, contentType) {
 +function send(ses, body, contentType) {
++  let stream = ses.request();
    if (contentType) {
 -    req.removeHeader('content-type');
 -    req.setHeader('content-type', contentType);
-+    ses.request({'content-type': '' });
-+    ses.request({'content-type': contentType });
++    stream = ses.request({'content-type': '' });
++    stream = ses.request({'content-type': contentType });
    }
    if (body) {
 -    req.removeHeader('content-length');
 -    req.setHeader('content-length', Buffer.byteLength(body));
 -    req.write(body);
-+     ses.request({'content-length':''});
-+     ses.request({'content-length':Buffer.byteLength(body)});
-+    ses.request.write(body);
++    stream = ses.request({'content-length':''});
++    stream = ses.request({'content-length':Buffer.byteLength(body)});
++     let data = '';
++     stream.on('data', (body) => {
++      // Append response data to the data string
++      data += body;
++      });
    }
 -  req.end();
-+  ses.request.end();
-+  ses.close();
++  stream.on('end', () => {
++    ses.close(()=>{
++    })
++  });
  }
  
  const nonces = new LRU({ max: 100 });
-@@ -117,7 +118,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
+@@ -117,7 +125,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
    }
  
    let response;
