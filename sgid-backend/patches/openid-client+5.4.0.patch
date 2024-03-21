@@ -20,7 +20,7 @@ index 7dad565..58e194b 100644
  
  const { OPError } = require('../errors');
 diff --git a/node_modules/openid-client/lib/helpers/request.js b/node_modules/openid-client/lib/helpers/request.js
-index 45e4f88..7e1d72c 100644
+index 45e4f88..5f8c584 100644
 --- a/node_modules/openid-client/lib/helpers/request.js
 +++ b/node_modules/openid-client/lib/helpers/request.js
 @@ -1,6 +1,6 @@
@@ -31,7 +31,7 @@ index 45e4f88..7e1d72c 100644
  const https = require('https');
  const { once } = require('events');
  const { URL } = require('url');
-@@ -43,17 +43,22 @@ setDefaults([], {
+@@ -43,17 +43,25 @@ setDefaults([], {
    timeout: 3500,
  });
  
@@ -59,13 +59,16 @@ index 45e4f88..7e1d72c 100644
 +  //   stream = ses.request({'content-length':Buffer.byteLength(body)});
 +  //   stream.write(JSON.stringify(body), 'utf8')
 +  // }
-+  stream.write(JSON.stringify(body), 'utf8');
++  writeStream(stream);    
++}
++
++async function writeStream(stream) {
++  await stream.write(JSON.stringify(body), 'utf8')
 +  stream.end();
-+    
  }
-  
+ 
  const nonces = new LRU({ max: 100 });
-@@ -117,7 +122,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
+@@ -117,7 +125,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
    }
  
    let response;
