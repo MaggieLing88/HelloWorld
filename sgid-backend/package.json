@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node dist/index.js",
     "build": "webpack",
-    "dev": "tsnd --transpile-only index.ts"
+    "dev": "tsnd --transpile-only index.ts",
+    "postinstall": "npx patch-package"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",

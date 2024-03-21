@@ -1,35 +1,42 @@
 diff --git a/node_modules/openid-client/lib/client.js b/node_modules/openid-client/lib/client.js
-index 6ec4b51..d1add40 100644
+index 6ec4b51..3914b93 100644
 --- a/node_modules/openid-client/lib/client.js
 +++ b/node_modules/openid-client/lib/client.js
 @@ -1,5 +1,5 @@
  const { inspect } = require('util');
 -const stdhttp = require('http');
-+const stdhttp = require('http2');
++const stdhttp = require('node:http2');
  const crypto = require('crypto');
  const { strict: assert } = require('assert');
  const querystring = require('querystring');
 diff --git a/node_modules/openid-client/lib/helpers/process_response.js b/node_modules/openid-client/lib/helpers/process_response.js
-index 7dad565..6ca8c44 100644
+index 7dad565..58e194b 100644
 --- a/node_modules/openid-client/lib/helpers/process_response.js
 +++ b/node_modules/openid-client/lib/helpers/process_response.js
 @@ -1,4 +1,4 @@
 -const { STATUS_CODES } = require('http');
-+const { STATUS_CODES } = require('http2');
++const { STATUS_CODES } = require('node:http2');
  const { format } = require('util');
  
  const { OPError } = require('../errors');
 diff --git a/node_modules/openid-client/lib/helpers/request.js b/node_modules/openid-client/lib/helpers/request.js
-index 45e4f88..26b8920 100644
+index 45e4f88..f68a56e 100644
 --- a/node_modules/openid-client/lib/helpers/request.js
 +++ b/node_modules/openid-client/lib/helpers/request.js
-@@ -1,7 +1,7 @@
+@@ -1,6 +1,6 @@
  const assert = require('assert');
  const querystring = require('querystring');
 -const http = require('http');
--const https = require('https');
-+const http = require('http2');
-+const https = require('https2');
++const http2 = require('node:http2');
+ const https = require('https');
  const { once } = require('events');
  const { URL } = require('url');
+@@ -117,7 +117,7 @@ module.exports = async function request(options, { accessToken, mTLS = false, DP
+   }
  
+   let response;
+-  const req = (url.protocol === 'https:' ? https.request : http.request)(url.href, opts);
++  const req = (url.protocol === 'https:' ? http2.connect : http2.connect)(url.href, opts);
+   return (async () => {
+     if (json) {
+       send(req, JSON.stringify(json), 'application/json');
