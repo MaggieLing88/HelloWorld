@@ -13,13 +13,10 @@ import { Request, Response } from 'express'
 
 dotenv.config()
 
+const log = Logger.getLogger()
 const PORT = String(process.env.APP_PORT)
-const redirectUri = String(
-  process.env.SGID_REDIRECT_URI ?? `${String(process.env.VITE_BACKEND_URL)}/api/redirect`,
-)
-const frontendHost = String(
-  process.env.SGID_FRONTEND_HOST ?? String(process.env.VITE_BACKEND_URL)
-)
+const redirectUri = String(process.env.VITE_BACKEND_URL)+'/api/redirect'
+const frontendHost = String(process.env.VITE_BACKEND_URL)
 
 const sgid = new SgidClient({
   clientId: String(process.env.CLIENT_ID),
@@ -87,6 +84,7 @@ apiRouter.get('/health/check', (req, res) => {
     res.status(200).send(healthcheck)
   } catch (err: any) {
     healthcheck.message = err
+    log.error("health check failed. "+ healthcheck.message)
     res.status(err.status || 503).send(`${res.statusMessage} - ${err.message}`)
   }
 })
@@ -130,12 +128,14 @@ apiRouter.get('/redirect',async (req, res): Promise<void> => {
   const session = { ...sessionData[sessionId] }
   // Validate that the state matches what we passed to sgID for this session
    if (session?.state?.toString() !== state) {
+    log.error("Failed to get session state in memory store.")
     res.redirect(`${frontendHost}/error`)
      return
   }
 
   // Validate that the code verifier exists for this session
     if (session?.codeVerifier === undefined) {
+      log.error("Failed to get code verifier in memory store.")
       res.redirect(`${frontendHost}/error`)
        return
      }
@@ -194,10 +194,10 @@ const initServer = async (): Promise<void> => {
     app.use(express.static(path.join(__dirname, 'build')));
 
     app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`)
+      log.info(`Server listening on port ${PORT}`)
     })
   } catch (error) {
-    console.error(
+    log.error(
       'Something went wrong while starting the server. Please restart the server.',
     )
     console.error(error)
