@@ -121,6 +121,7 @@ apiRouter.get('/auth-url',(req, res) => {
 })
 
 apiRouter.get('/redirect',async (req, res): Promise<void> => {
+  try{
   const authCode = String(req.query.code)
   const state = String(req.query.state)
   const sessionId = String(req.cookies[SESSION_COOKIE_NAME])
@@ -151,6 +152,11 @@ apiRouter.get('/redirect',async (req, res): Promise<void> => {
   session.accessToken = accessToken
   session.sub = sub
   sessionData[sessionId] = session
+  }catch (error){
+    log.error("Failed in /redirect. Error:"+error)
+    res.redirect(`${frontendHost}/error`)
+    return
+  }
 
   // Successful login, redirect to logged in state
   res.redirect(`${frontendHost}/logged-in`)
