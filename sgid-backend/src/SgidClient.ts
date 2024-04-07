@@ -6,7 +6,8 @@ import {
   DEFAULT_SGID_CODE_CHALLENGE_METHOD,
   SGID_AUTH_METHOD,
   SGID_SIGNING_ALG,
-  SGID_SUPPORTED_GRANT_TYPES
+  SGID_SUPPORTED_GRANT_TYPES,
+  GRANT_TYPE
 } from './constants'
 import * as Errors from './error'
 import { generateNonce } from './generators'
@@ -98,7 +99,7 @@ export class SgidClient {
     if (nonce) {
       result.nonce = nonce
     }
-    this.log.debug("/auth, nonce:"+nonce+", url:"+url)
+    this.log.info("/auth, nonce:"+nonce+", url:"+url)
     return result
   }
 
@@ -126,11 +127,13 @@ export class SgidClient {
    */
   async callback({
     code,
-    nonce = null,
+    nonce,
     redirectUri = this.getFirstRedirectUri(),
-    codeVerifier,
-    state = null
+    codeVerifier
   }: CallbackParams): Promise<CallbackReturn> {
+    this.log.info("code:"+code)
+    this.log.info("nonce:"+nonce)
+    this.log.info("codeVerifier:"+codeVerifier)
     const tokenSet = await this.sgID.callback(
       redirectUri,
       { code },

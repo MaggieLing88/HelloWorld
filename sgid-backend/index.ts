@@ -121,12 +121,18 @@ apiRouter.get('/auth-url',(req, res) => {
 })
 
 apiRouter.get('/redirect',async (req, res): Promise<void> => {
-  try{
   const authCode = String(req.query.code)
   const state = String(req.query.state)
   const sessionId = String(req.cookies[SESSION_COOKIE_NAME])
 
+  log.info("red code:"+authCode)
+  log.info("red state:"+state)
   const session = { ...sessionData[sessionId] }
+  log.info("session nonce"+session.nonce)
+  log.info("session code verifier:"+session.codeVerifier)
+  log.info("session accesstoken:"+session.accessToken)
+  log.info("session sub:"+session.sub)
+  log.info("session state"+session.state)
   // Validate that the state matches what we passed to sgID for this session
    if (session?.state?.toString() !== state) {
     log.error("Failed to get session state in memory store.")
@@ -140,20 +146,20 @@ apiRouter.get('/redirect',async (req, res): Promise<void> => {
       res.redirect(`${frontendHost}/error`)
        return
      }
-
+try{
   // Exchange the authorization code and code verifier for the access token
   const { codeVerifier, nonce } = session
   const { accessToken, sub } = await sgid.callback({
     code: authCode,
-    nonce,
-    codeVerifier
+    nonce: nonce,
+    codeVerifier: codeVerifier
   })
 
   session.accessToken = accessToken
   session.sub = sub
   sessionData[sessionId] = session
-  }catch (error){
-    log.error("Failed in /redirect. Error:"+error)
+  }catch (err: any){
+    log.error("Failed in /redirect. Error:"+err.message)
     res.redirect(`${frontendHost}/error`)
     return
   }
