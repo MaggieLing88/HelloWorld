@@ -21,7 +21,7 @@ const frontendHost = String(process.env.VITE_BACKEND_URL)
 const sgid = new SgidClient({
   clientId: String(process.env.CLIENT_ID),
   clientSecret: String(process.env.CLIENT_SECRET),
-  redirectUri
+  redirectUri: redirectUri,
 })
 
 const app = express()
@@ -150,9 +150,10 @@ try{
   // Exchange the authorization code and code verifier for the access token
   const { codeVerifier, nonce } = session
   const { accessToken, sub } = await sgid.callback({
+    redirectUri: redirectUri,
     code: authCode,
-    nonce: nonce,
-    codeVerifier: codeVerifier
+    nonce : nonce,
+    codeVerifier : codeVerifier
   })
 
   session.accessToken = accessToken

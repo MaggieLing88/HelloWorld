@@ -134,6 +134,7 @@ export class SgidClient {
     this.log.info("code:"+code)
     this.log.info("nonce:"+nonce)
     this.log.info("codeVerifier:"+codeVerifier)
+    this.log.info("redirecturi:"+redirectUri)
     const tokenSet = await this.sgID.callback(
       redirectUri,
       { code },
