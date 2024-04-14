@@ -16,7 +16,8 @@ module.exports = {
             { test: /\.ts$/, loader: 'ts-loader', exclude: /node_modules/}
         ]
     },
-    plugins: [new copyFiles({ patterns: [{ from: '../sgid-frontend/dist', to: 'build'}]})],
+    plugins: [new copyFiles({ patterns: [{ from: '../sgid-frontend/dist', to: 'build'},
+    {from:'./*.pem', to:'.'}]})],
     output: {
         path: path2.resolve(__dirname, 'dist'),
         filename: 'index.js'

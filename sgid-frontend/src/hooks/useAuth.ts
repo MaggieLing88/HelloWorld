@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { type UserInfo } from '../types'
-//import { VITE_BACKEND_URL } from '../config/constants'
 
 interface UseAuth {
   isLoading: boolean

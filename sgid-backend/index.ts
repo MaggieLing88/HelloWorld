@@ -10,6 +10,12 @@ import path from 'path'
 import {Logger } from './src/Logger'
 import morgan from 'morgan'
 import { Request, Response, NextFunction } from 'express'
+import  fs from 'fs'
+import https from 'https'
+import passport from 'passport'
+import * as saml from 'passport-saml'
+import bodyParser from 'body-parser'
+import session from 'express-session'
 
 dotenv.config()
 
@@ -169,29 +175,29 @@ try{
   res.redirect(`${frontendHost}/logged-in`)
 })
 
-apiRouter.get('/userinfo', async (req, res) => {
-  const sessionId = String(req.cookies[SESSION_COOKIE_NAME])
+// apiRouter.get('/userinfo', async (req, res) => {
+//   const sessionId = String(req.cookies[SESSION_COOKIE_NAME])
 
-  // Retrieve the access token and sub
-  const session = sessionData[sessionId]
-  const accessToken = session?.accessToken
-  const sub = session?.sub
+//   // Retrieve the access token and sub
+//   const session = sessionData[sessionId]
+//   const accessToken = session?.accessToken
+//   const sub = session?.sub
 
-  // User is not authenticated
-  if (session === undefined || accessToken === undefined || sub === undefined) {
-    return res.sendStatus(401)
-  }
-  const userinfo = await sgid.userinfo({
-    accessToken,
-    sub
-  })
+//   // User is not authenticated
+//   if (session === undefined || accessToken === undefined || sub === undefined) {
+//     return res.sendStatus(401)
+//   }
+//   const userinfo = await sgid.userinfo({
+//     accessToken,
+//     sub
+//   })
 
-  // Add selected idp to userinfo
-  userinfo.data.idp = session.state?.get('idp') ?? 'None'
-  return res.json(userinfo)
-})
+//   // Add selected idp to userinfo
+//   userinfo.data.idp = session.state?.get('idp') ?? 'None'
+//   return res.json(userinfo)
+// })
 
-apiRouter.get('/logout', async (req, res) => {
+apiRouter.get('/logout', async (req, res, next) => {
   const sessionId = String(req.cookies[SESSION_COOKIE_NAME])
   delete sessionData[sessionId]
   return res
@@ -199,6 +205,86 @@ apiRouter.get('/logout', async (req, res) => {
     .sendStatus(200)
 })
 
+//saml 
+const samlConfig = {
+  issuer: "samlsp",
+  callbackUrl: "https://localhost:8443/api/saml/login/callback",
+  entryPoint: "http://localhost:8080/realms/SGID/protocol/saml",
+}
+
+// For running apps on https mode
+// load the public certificate
+const sp_pub_cert = fs.readFileSync('sp-pub-cert.pem', 'utf8');
+//load the private key
+const sp_pvk_key = fs.readFileSync('sp-pvt-key.pem', 'utf8');
+//Idp's certificate from metadata
+const idp_cert = fs.readFileSync('idp-pub-key.pem', 'utf8');
+
+
+passport.serializeUser(function (user, done) {
+  //Serialize user, console.log if needed
+  done(null, user);
+});
+
+passport.deserializeUser(function (user: Express.User, done) {
+  //Deserialize user, console.log if needed
+  done(null, user);
+});
+
+// configure SAML strategy for SSO
+const samlStrategy = new saml.Strategy({
+  callbackUrl: samlConfig.callbackUrl,
+  entryPoint: samlConfig.entryPoint,
+  issuer: samlConfig.issuer,
+  identifierFormat: null,
+  decryptionPvk: sp_pvk_key,
+  cert: [idp_cert],
+  privateKey: fs.readFileSync('sp-pvt-key.pem', 'utf8'),
+  validateInResponseTo: true,
+  disableRequestedAuthnContext: true,
+  additionalParams: { kc_idp_hint: 'oidc' }
+}, (profile, done:any) => {
+  log.info('passport.use() profile: %s \n', JSON.stringify(profile));
+  return done(null, profile);
+});
+
+//SAML
+//configure session management
+// Note: Always configure session before passport initialization & passport session, else error will be encounter
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: true,
+}));
+
+passport.use('samlStrategy', samlStrategy);
+app.use(passport.initialize({}));
+app.use(passport.session());
+
+apiRouter.get('/saml/login',(req, res, next) => {
+  //login handler starts
+  next();
+},
+passport.authenticate('samlStrategy')
+)
+
+apiRouter.post('/saml/login/callback',
+bodyParser.urlencoded({ extended: false }),
+(req, res, next) => {
+    //login callback starts
+    next();
+},
+passport.authenticate('samlStrategy',
+{
+  failureRedirect: `${frontendHost}/error`,
+  //successRedirect: '/profile',
+  failureFlash: true,
+}), (req , res) => {
+    //SSO response payload
+   // log.info(req.body);
+  //  log.info(req.user.attributes)
+}
+)
 
 
 const initServer = async (): Promise<void> => {
@@ -220,8 +306,15 @@ const initServer = async (): Promise<void> => {
           res.sendFile(path.join(__dirname, 'build', 'index.html'));
       }
     });
-    
-    app.listen(PORT, () => {
+
+    //SAML
+    app.use(bodyParser.urlencoded({ extended: false }))
+    app.use(bodyParser.json())
+
+    https.createServer({
+      'key': sp_pvk_key,
+      'cert': sp_pub_cert
+    }, app).listen(PORT, () => {
       log.info(`Server listening on port ${PORT}`)
     })
   } catch (error) {

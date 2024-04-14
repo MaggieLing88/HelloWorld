@@ -92,7 +92,7 @@ export class SgidClient {
       redirect_uri: redirectUri,
      code_challenge: codeChallenge,
       code_challenge_method: DEFAULT_SGID_CODE_CHALLENGE_METHOD,
-      kc_idp_hint:`SGID`
+      kc_idp_hint:`oidc`
     })
 
     const result: { url: string; nonce?: string } = { url }

@@ -3,7 +3,6 @@ import {
   FormControl,
   HStack,
   Image,
-  Spinner,
   Stack,
   VStack,
   ButtonGroup,
@@ -15,13 +14,12 @@ import { useErrorBoundary } from 'react-error-boundary'
 import sgidImage from '../assets/sgid.png'
 import aadImage from '../assets/aad.png'
 import govTech from '../assets/logo_govtech.gif'
-import { useAuth } from '../hooks/useAuth'
-import { Navigate } from 'react-router-dom'
 //import { VITE_BACKEND_URL } from '../config/constants'
 
 enum IDPOptions {
   SGID = 'SGID',
   AzureAD = 'WOG AD',
+  SGID_SAML = 'SGID_SAML'
 }
 
 export const HomePage = (): JSX.Element => {
@@ -29,42 +27,66 @@ export const HomePage = (): JSX.Element => {
   const [idp, setIDP] = useState(IDPOptions.SGID)
   const idpFieldId = useMemo(() => 'idp', [])
   // Button loading state
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingOIDC, setIsLoadingOIDC] = useState(false)
+  const [isLoadingSAML, setIsLoadingSAML] = useState(false)
 
   // Button click handler
   const { showBoundary } = useErrorBoundary()
   
   const handleLoginBtnClick = useCallback((value: IDPOptions) => {
     setIDP(value)
-    setIsLoading(true)
-    fetch(process.env.VITE_BACKEND_URL+`/api/auth-url?idp=${idp}`, {
-      credentials: 'include',
-    })
-      .then(async (r) => await r.json())
-      .then(({ url }) => {
-        window.location.href = url
+
+    if(value==IDPOptions.SGID_SAML){
+      setIsLoadingSAML(true)
+      fetch(process.env.VITE_BACKEND_URL+`/api/saml/login`, {
+        credentials: 'include',
       })
-      .catch((e: unknown) => {
-        setIsLoading(false)
-        if (e instanceof Error) {
-          showBoundary(e)
-        }
-        showBoundary(
-          new Error(
-            'Something went wrong while fetching the authorisation URL.'
+        .then(async (r) => await r.json())
+        .then(({ url }) => {
+          window.location.href = url
+        })
+        .catch((e: unknown) => {
+          setIsLoadingSAML(false)
+          if (e instanceof Error) {
+            showBoundary(e)
+          }
+          showBoundary(
+            new Error(
+              'Something went wrong while redirect for IDP authentication.'
+            )
           )
-        )
+        })
+    }else{
+      setIsLoadingOIDC(true)
+      fetch(process.env.VITE_BACKEND_URL+`/api/auth-url?idp=${idp}`, {
+        credentials: 'include',
       })
+        .then(async (r) => await r.json())
+        .then(({ url }) => {
+          window.location.href = url
+        })
+        .catch((e: unknown) => {
+          setIsLoadingOIDC(false)
+          if (e instanceof Error) {
+            showBoundary(e)
+          }
+          showBoundary(
+            new Error(
+              'Something went wrong while fetching the authorisation URL.'
+            )
+          )
+        })
+    }
   }, [idp, showBoundary])
 
-  const { user, isLoading: isUserLoading } = useAuth()
+  //const { user, isLoading: isUserLoading } = useAuth()
 
-  if (isUserLoading) {
-    return <Spinner />
-  }
-  if (user !== null) {
-    return <Navigate to="/logged-in" />
-  }
+  // if (isUserLoading) {
+  //   return <Spinner />
+  // }
+  // if (user !== null) {
+  //   return <Navigate to="/logged-in" />
+  // }
   return (
     <VStack spacing="48px"> 
       <HStack spacing="48px" justifyContent={'center'}>
@@ -78,8 +100,12 @@ export const HomePage = (): JSX.Element => {
           
           <Stack spacing="0.5rem" direction='column'>  
             <Button  size='lg'   bg='#8B0000' color={'white'} borderWidth={'medium'}  _hover={{opacity: 0.7}} onClick={() => {handleLoginBtnClick(IDPOptions.SGID)}}
-            rightIcon={<Image src={sgidImage} width="22" height="22"/>} isLoading={isLoading}>
-             Login with SGID
+            rightIcon={<Image src={sgidImage} width="22" height="22"/>} isLoading={isLoadingOIDC}>
+             Login with SGID using OIDC
+            </Button>
+            <Button  size='lg'   bg='#8B0000' color={'white'} borderWidth={'medium'}  _hover={{opacity: 0.7}} onClick={() => {handleLoginBtnClick(IDPOptions.SGID_SAML)}}
+            rightIcon={<Image src={sgidImage} width="22" height="22"/>} isLoading={isLoadingSAML}>
+             Login with SGID using SAML
             </Button>
             <Button  size='lg' bg='#23395d' color={'white'}  borderWidth={'medium'}  _hover={{opacity: 0.7}}
             rightIcon={<Image src={aadImage} width="30" height="30"/>}>
